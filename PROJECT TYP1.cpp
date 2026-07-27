@@ -1,186 +1,205 @@
 #include <iostream>
 #include <stdlib.h>
 #include <time.h>
+#include <ctime>
+#include <limits>
 
 using namespace std;
 
-struct DataItem {
+long long operationTally = 0;
+
+int readValidInt() {
     int value;
+    while (!(cin >> value)) {
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        cout << "Invalid input. Please enter a number: ";
+    }
+    return value;
+}
+
+struct Record {
+    int number;
 };
 
-void populateDataset(struct DataItem dataset[], int count) {
-    for (int idx = 0; idx < count; idx++) {
-        dataset[idx].value = rand() % 1000 + 1;
+void generateRecords(struct Record collection[], int total) {
+    for (int index = 0; index < total; index++) {
+        collection[index].number = rand() % 1000 + 1;
     }
 }
 
-void showAllEntries(DataItem dataset[], int count) {
+void displayAllRecords(Record collection[], int total) {
     cout << "\n------ ALL RECORDS ------\n";
 
-    for (int idx = 0; idx < count; idx++) {
-        cout << "Record " << idx + 1 << ": " << dataset[idx].value << endl;
+    for (int index = 0; index < total; index++) {
+        cout << "Record " << index + 1 << ": " << collection[index].number << endl;
     }
 
     cout << endl;
 }
 
-void selectionSortAlgo(DataItem dataset[], int count) {
-    for (int outer = 0; outer < count - 1; outer++) {
-        int minPos = outer;
+void selectionSortMethod(Record collection[], int total) {
+    for (int outerIdx = 0; outerIdx < total - 1; outerIdx++) {
+        int smallestPos = outerIdx;
 
-        for (int inner = outer + 1; inner < count; inner++) {
-            if (dataset[inner].value < dataset[minPos].value) {
-                minPos = inner;
+        for (int innerIdx = outerIdx + 1; innerIdx < total; innerIdx++) {
+            operationTally++;
+            if (collection[innerIdx].number < collection[smallestPos].number) {
+                smallestPos = innerIdx;
             }
         }
 
-        DataItem swapTemp = dataset[outer];
-        dataset[outer] = dataset[minPos];
-        dataset[minPos] = swapTemp;
+        Record temp = collection[outerIdx];
+        collection[outerIdx] = collection[smallestPos];
+        collection[smallestPos] = temp;
     }
 
     cout << "\nSelection Sort completed.\n\n";
 }
 
-int partitionData(DataItem dataset[], int lowBound, int highBound) {
-    int pivotValue = dataset[highBound].value;
+int splitSegment(Record collection[], int lowerLimit, int upperLimit) {
+    int pivot = collection[upperLimit].number;
 
-    int boundary = lowBound - 1;
+    int divider = lowerLimit - 1;
 
-    for (int scan = lowBound; scan < highBound; scan++) {
-        if (dataset[scan].value < pivotValue) {
-            boundary++;
+    for (int cursor = lowerLimit; cursor < upperLimit; cursor++) {
+        operationTally++;
+        if (collection[cursor].number < pivot) {
+            divider++;
 
-            DataItem swapTemp = dataset[boundary];
-            dataset[boundary] = dataset[scan];
-            dataset[scan] = swapTemp;
+            Record temp = collection[divider];
+            collection[divider] = collection[cursor];
+            collection[cursor] = temp;
         }
     }
-    DataItem swapTemp = dataset[boundary + 1];
-    dataset[boundary + 1] = dataset[highBound];
-    dataset[highBound] = swapTemp;
+    Record temp = collection[divider + 1];
+    collection[divider + 1] = collection[upperLimit];
+    collection[upperLimit] = temp;
 
-    return boundary + 1;
+    return divider + 1;
 }
 
-void quickSortAlgo(DataItem dataset[], int lowBound, int highBound) {
-    if (lowBound < highBound) {
-        int splitPos = partitionData(dataset, lowBound, highBound);
+void quickSortMethod(Record collection[], int lowerLimit, int upperLimit) {
+    if (lowerLimit < upperLimit) {
+        int pivotIndex = splitSegment(collection, lowerLimit, upperLimit);
 
-        quickSortAlgo(dataset, lowBound, splitPos - 1);
-        quickSortAlgo(dataset, splitPos + 1, highBound);
+        quickSortMethod(collection, lowerLimit, pivotIndex - 1);
+        quickSortMethod(collection, pivotIndex + 1, upperLimit);
     }
 }
 
-void mergeArrays(DataItem dataset[], int startPos, int middlePos, int endPos) {
-    int leftSize = middlePos - startPos + 1;
-    int rightSize = endPos - middlePos;
+void combineSegments(Record collection[], int beginPos, int midPos, int finishPos) {
+    int leftLength = midPos - beginPos + 1;
+    int rightLength = finishPos - midPos;
 
-    DataItem leftPart[leftSize];
-    DataItem rightPart[rightSize];
+    Record leftHalf[leftLength];
+    Record rightHalf[rightLength];
 
-    for (int idx = 0; idx < leftSize; idx++)
-        leftPart[idx] = dataset[startPos + idx];
+    for (int index = 0; index < leftLength; index++)
+        leftHalf[index] = collection[beginPos + index];
 
-    for (int idx = 0; idx < rightSize; idx++)
-        rightPart[idx] = dataset[middlePos + 1 + idx];
+    for (int index = 0; index < rightLength; index++)
+        rightHalf[index] = collection[midPos + 1 + index];
 
-    int leftIdx = 0;
-    int rightIdx = 0;
-    int mergePos = startPos;
+    int leftPointer = 0;
+    int rightPointer = 0;
+    int combinedPos = beginPos;
 
-    while (leftIdx < leftSize && rightIdx < rightSize) {
-        if (leftPart[leftIdx].value <= rightPart[rightIdx].value) {
-            dataset[mergePos] = leftPart[leftIdx];
-            leftIdx++;
+    while (leftPointer < leftLength && rightPointer < rightLength) {
+        operationTally++;
+        if (leftHalf[leftPointer].number <= rightHalf[rightPointer].number) {
+            collection[combinedPos] = leftHalf[leftPointer];
+            leftPointer++;
         }
         else {
-            dataset[mergePos] = rightPart[rightIdx];
-            rightIdx++;
+            collection[combinedPos] = rightHalf[rightPointer];
+            rightPointer++;
         }
-        mergePos++;
+        combinedPos++;
     }
 
-    while (leftIdx < leftSize) {
-        dataset[mergePos] = leftPart[leftIdx];
-        leftIdx++;
-        mergePos++;
+    while (leftPointer < leftLength) {
+        collection[combinedPos] = leftHalf[leftPointer];
+        leftPointer++;
+        combinedPos++;
     }
 
-    while (rightIdx < rightSize) {
-        dataset[mergePos] = rightPart[rightIdx];
-        rightIdx++;
-        mergePos++;
-    }
-}
-
-void mergeSortAlgo(DataItem dataset[], int startPos, int endPos) {
-    if (startPos < endPos) {
-        int middlePos = (startPos + endPos) / 2;
-
-        mergeSortAlgo(dataset, startPos, middlePos);
-        mergeSortAlgo(dataset, middlePos + 1, endPos);
-
-        mergeArrays(dataset, startPos, middlePos, endPos);
+    while (rightPointer < rightLength) {
+        collection[combinedPos] = rightHalf[rightPointer];
+        rightPointer++;
+        combinedPos++;
     }
 }
 
-int binarySearchAlgo(DataItem dataset[], int count, int target)
+void mergeSortMethod(Record collection[], int beginPos, int finishPos) {
+    if (beginPos < finishPos) {
+        int midPos = (beginPos + finishPos) / 2;
+
+        mergeSortMethod(collection, beginPos, midPos);
+        mergeSortMethod(collection, midPos + 1, finishPos);
+
+        combineSegments(collection, beginPos, midPos, finishPos);
+    }
+}
+
+int binarySearchMethod(Record collection[], int total, int searchKey)
 {
-    int lowBound = 0;
-    int highBound = count - 1;
+    int lowerLimit = 0;
+    int upperLimit = total - 1;
 
-    while (lowBound <= highBound) {
-        int middlePos = (lowBound + highBound) / 2;
+    while (lowerLimit <= upperLimit) {
+        int midPos = (lowerLimit + upperLimit) / 2;
 
-        if (dataset[middlePos].value == target) {
-            return middlePos;
+        operationTally++;
+        if (collection[midPos].number == searchKey) {
+            return midPos;
         }
 
-        else if (dataset[middlePos].value < target) {
-            lowBound = middlePos + 1;
+        else if (collection[midPos].number < searchKey) {
+            lowerLimit = midPos + 1;
         }
 
         else {
-            highBound = middlePos - 1;
+            upperLimit = midPos - 1;
         }
     }
     return -1;
 }
 
-int interpolationSearchAlgo(DataItem dataset[], int count, int target) {
-    int lowBound = 0;
-    int highBound = count - 1;
+int interpolationSearchMethod(Record collection[], int total, int searchKey) {
+    int lowerLimit = 0;
+    int upperLimit = total - 1;
 
-    while (lowBound <= highBound && target >= dataset[lowBound].value && target <= dataset[highBound].value) {
-        if (dataset[highBound].value == dataset[lowBound].value) {
-            if (dataset[lowBound].value == target)
-                return lowBound;
+    while (lowerLimit <= upperLimit && searchKey >= collection[lowerLimit].number && searchKey <= collection[upperLimit].number) {
+        if (collection[upperLimit].number == collection[lowerLimit].number) {
+            if (collection[lowerLimit].number == searchKey)
+                return lowerLimit;
             else
                 return -1;
         }
 
-        int estimatePos = lowBound + ((target - dataset[lowBound].value) * (highBound - lowBound)) / (dataset[highBound].value - dataset[lowBound].value);
+        int guessPos = lowerLimit + ((searchKey - collection[lowerLimit].number) * (upperLimit - lowerLimit)) / (collection[upperLimit].number - collection[lowerLimit].number);
 
-        if (dataset[estimatePos].value == target)
-            return estimatePos;
+        operationTally++;
+        if (collection[guessPos].number == searchKey)
+            return guessPos;
 
-        if (dataset[estimatePos].value < target)
-            lowBound = estimatePos + 1;
+        if (collection[guessPos].number < searchKey)
+            lowerLimit = guessPos + 1;
         else
-            highBound = estimatePos - 1;
+            upperLimit = guessPos - 1;
     }
     return -1;
 }
 
 int main() {
-    DataItem dataset[100];
-    bool sortedFlag = false;
+    Record collection[100];
+    bool isSorted = false;
 
     srand(time(NULL));
-    populateDataset(dataset, 100);
+    generateRecords(collection, 100);
 
-    int menuChoice;
+    int userSelection;
 
     do {
         cout << "====== MENU ======\n";
@@ -191,15 +210,15 @@ int main() {
         cout << "5. Exit\n";
 
         cout << "Enter Choice: ";
-        cin >> menuChoice;
+        userSelection = readValidInt();
 
-        switch (menuChoice) {
+        switch (userSelection) {
             case 1:
-                showAllEntries(dataset, 100);
+                displayAllRecords(collection, 100);
                 break;
 
             case 2: {
-                int sortOption;
+                int sortChoice;
 
                 cout << "\n------ SORT RECORDS ------\n";
                 cout << "1. Selection Sort\n";
@@ -207,25 +226,55 @@ int main() {
                 cout << "3. Merge Sort\n";
 
                 cout << "Enter Choice: ";
-                cin >> sortOption;
+                sortChoice = readValidInt();
 
-                switch (sortOption) {
-                    case 1:
-                        selectionSortAlgo(dataset, 100);
-                        sortedFlag = true;
-                        break;
+                switch (sortChoice) {
+                    case 1: {
+                        operationTally = 0;
+                        clock_t beginClock = clock();
 
-                    case 2:
-                        quickSortAlgo(dataset, 0, 99);
-                        sortedFlag = true;
-                        cout << "\nQuick Sort completed.\n\n";
-                        break;
+                        selectionSortMethod(collection, 100);
 
-                    case 3:
-                        mergeSortAlgo(dataset, 0, 99);
-                        sortedFlag = true;
-                        cout << "\nMerge Sort completed.\n\n";
+                        clock_t finishClock = clock();
+                        double durationMs = double(finishClock - beginClock) / CLOCKS_PER_SEC * 1000;
+
+                        isSorted = true;
+                        cout << "Time taken: " << durationMs << " ms\n";
+                        cout << "Comparisons: " << operationTally << "\n\n";
                         break;
+                    }
+
+                    case 2: {
+                        operationTally = 0;
+                        clock_t beginClock = clock();
+
+                        quickSortMethod(collection, 0, 99);
+
+                        clock_t finishClock = clock();
+                        double durationMs = double(finishClock - beginClock) / CLOCKS_PER_SEC * 1000;
+
+                        isSorted = true;
+                        cout << "\nQuick Sort completed.\n";
+                        cout << "Time taken: " << durationMs << " ms\n";
+                        cout << "Comparisons: " << operationTally << "\n\n";
+                        break;
+                    }
+
+                    case 3: {
+                        operationTally = 0;
+                        clock_t beginClock = clock();
+
+                        mergeSortMethod(collection, 0, 99);
+
+                        clock_t finishClock = clock();
+                        double durationMs = double(finishClock - beginClock) / CLOCKS_PER_SEC * 1000;
+
+                        isSorted = true;
+                        cout << "\nMerge Sort completed.\n";
+                        cout << "Time taken: " << durationMs << " ms\n";
+                        cout << "Comparisons: " << operationTally << "\n\n";
+                        break;
+                    }
 
                     default:
                         cout << "Invalid choice.\n";
@@ -234,11 +283,11 @@ int main() {
             }
 
             case 3: {
-                int searchOption;
-                int target;
-                int foundIndex;
+                int searchChoice;
+                int searchKey;
+                int resultIndex;
 
-                if (!sortedFlag) {
+                if (!isSorted) {
                     cout << "Please sort the records before searching.\n";
                     break;
                 }
@@ -249,30 +298,57 @@ int main() {
                     cout << "2. Interpolation Search\n";
 
                     cout << "Enter Choice: ";
-                    cin >> searchOption;
+                    searchChoice = readValidInt();
 
                     cout << "Enter number to search: ";
-                    cin >> target;
+                    searchKey = readValidInt();
 
-                    switch (searchOption) {
-                        case 1:
-                            foundIndex = binarySearchAlgo(dataset, 100, target);
+                    switch (searchChoice) {
+                        case 1: {
+                            const int iterationTotal = 100000;
+                            operationTally = 0;
+                            clock_t beginClock = clock();
 
-                            if (foundIndex != -1)
-                                cout << "\nNumber found at Record " << foundIndex + 1 << "\n\n";
+                            for (int repeatIdx = 0; repeatIdx < iterationTotal; repeatIdx++) {
+                                resultIndex = binarySearchMethod(collection, 100, searchKey);
+                            }
+
+                            clock_t finishClock = clock();
+                            double durationMs = double(finishClock - beginClock) / CLOCKS_PER_SEC * 1000 / iterationTotal;
+                            long long meanComparisons = operationTally / iterationTotal;
+
+                            if (resultIndex != -1)
+                                cout << "\nNumber found at Record " << resultIndex + 1 << "\n";
                             else
-                                cout << "\nNumber not found.\n\n";
+                                cout << "\nNumber not found.\n";
+
+                            cout << "Avg time taken: " << durationMs << " ms\n";
+                            cout << "Avg comparisons: " << meanComparisons << "\n\n";
                             break;
+                        }
 
-                        case 2:
-                            foundIndex = interpolationSearchAlgo(dataset, 100, target);
+                        case 2: {
+                            const int iterationTotal = 100000;
+                            operationTally = 0;
+                            clock_t beginClock = clock();
 
-                            if (foundIndex != -1)
-                                cout << "\nNumber found at Record " << foundIndex + 1 << "\n\n";
+                            for (int repeatIdx = 0; repeatIdx < iterationTotal; repeatIdx++) {
+                                resultIndex = interpolationSearchMethod(collection, 100, searchKey);
+                            }
+
+                            clock_t finishClock = clock();
+                            double durationMs = double(finishClock - beginClock) / CLOCKS_PER_SEC * 1000 / iterationTotal;
+                            long long meanComparisons = operationTally / iterationTotal;
+
+                            if (resultIndex != -1)
+                                cout << "\nNumber found at Record " << resultIndex + 1 << "\n";
                             else
-                                cout << "\nNumber not found.\n\n";
+                                cout << "\nNumber not found.\n";
 
+                            cout << "Avg time taken: " << durationMs << " ms\n";
+                            cout << "Avg comparisons: " << meanComparisons << "\n\n";
                             break;
+                        }
 
                         default:
                             cout << "Invalid choice.\n\n";
@@ -282,8 +358,8 @@ int main() {
             }
 
             case 4:
-                populateDataset(dataset, 100);
-                sortedFlag = false;
+                generateRecords(collection, 100);
+                isSorted = false;
 
                 cout << "New Records generated successfully.\n";
                 break;
@@ -295,7 +371,7 @@ int main() {
             default:
                 cout << "Invalid choice.\n";
         }
-    } while (menuChoice != 5);
+    } while (userSelection != 5);
 
     return 0;
 }
